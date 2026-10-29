@@ -67,9 +67,9 @@ pegá el `access_token` (sin "Bearer").
 
 | HU | Criterio | Cómo se verifica | ✔ |
 |---|---|---|---|
-| HU01 | El admin ingresa; el operador no administra usuarios | `test_auth_api.py`, `test_users_api.py` (403) | ☐ |
-| HU02 | Cliente creado y encontrado por búsqueda; nombre obligatorio | `test_clients_api.py` + paso 4 | ☐ |
-| HU03 | Factura con saldo visible; número duplicado → error | `test_invoices_api.py` + paso 4 | ☐ |
-| HU05 | Factura impaga vencida pasa a VENCIDA sola | `test_hu05_vence_sola_sin_intervencion` + paso 4 | ☐ |
-| §5 | Saldo/estado/mora/antigüedad con Decimal | `test_invoice_rules.py` | ☐ |
-| §7 | Migraciones = modelos; restricciones UNIQUE/CHECK | `test_migrations.py` | ☐ |
+| HU01 | El admin ingresa; el operador no administra usuarios | `test_auth_api.py`, `test_users_api.py` (403) | ✔ |
+| HU02 | Cliente creado y encontrado por búsqueda; nombre obligatorio | `test_clients_api.py` + paso 4 | ✔ |
+| HU03 | Factura con saldo visible; número duplicado → error | `test_invoices_api.py` + paso 4 | ✔ |
+| HU05 | Factura impaga vencida pasa a VENCIDA sola | `test_hu05_vence_sola_sin_intervencion` + paso 4 | ✔ |
+| §5 | Saldo/estado/mora/antigüedad con Decimal | `test_invoice_rules.py` | ✔ |
+| §7 | Migraciones = modelos; restricciones UNIQUE/CHECK | `test_migrations.py` | ✔ |
