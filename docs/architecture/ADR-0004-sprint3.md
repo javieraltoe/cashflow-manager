@@ -1,6 +1,6 @@
 # ADR-0004 · Decisiones del Sprint 3 (aplicación de escritorio)
 
-Fecha: 2026-10-29 · Estado: propuesta
+Fecha: 2026-10-29 · Estado: aceptada
 
 Alcance (spec §4 y §13): login, clientes, facturas, pagos, mensajes de error e instalador
 preliminar. Se suman las pantallas de **saldo a favor** que requiere el ADR-0003 y la

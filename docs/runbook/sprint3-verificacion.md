@@ -23,22 +23,22 @@ aparecen como `skipped`, PySide6 no está instalado en el `.venv`.
 
 | # | Pantalla | Qué hacer | Resultado esperado | ✔ |
 |---|---|---|---|---|
-| 1 | Login | Servidor `localhost:8000`, email y contraseña incorrecta | "Email o contraseña incorrectos" en rojo | ☐ |
-| 2 | Login | Contraseña correcta | Abre la ventana principal con tu nombre y rol arriba | ☐ |
-| 3 | Inicio | Mirar las tarjetas | Conteos de vencidas, próximos 7 días y clientes activos | ☐ |
-| 4 | Clientes | Nuevo cliente "ACME SA" y después otro "acme sa" | El segundo marca el nombre en rojo: "Ya existe un cliente…" | ☐ |
-| 5 | Clientes | Buscar "acm" | Aparece ACME SA | ☐ |
-| 6 | Facturas | Nueva factura, importe `125.000,50` | En la lista: $ 125.000,50, estado Pendiente | ☐ |
-| 7 | Facturas | Otra con el mismo número para el mismo cliente | Número resaltado: "Ya existe una factura con ese número…" | ☐ |
-| 8 | Facturas | Registrar pago de `25.000,25` | Saldo $ 100.000,25, estado Parcial (HU04) | ☐ |
-| 9 | Facturas | Registrar pago de `200.000` | Pregunta si el excedente queda como saldo a favor; "No" deja el formulario abierto | ☐ |
-| 10 | Facturas | Doble clic rápido en "Registrar pago" | Un solo pago en el detalle | ☐ |
-| 11 | Facturas → Ver detalle | Seleccionar un pago → Anular, motivo "cheque rechazado" (admin) | El saldo vuelve a subir; el pago figura "Anulado: cheque rechazado" (HU09) | ☐ |
-| 12 | Saldo a favor | Elegir cliente → Cobro a cuenta $ 10.000 → Imputar a factura | Disponible baja y el saldo de la factura también | ☐ |
-| 13 | Configuración | Como **operador** | No aparecen "Usuarios" ni los botones "Anular" | ☐ |
-| 14 | Configuración | Cambiar contraseña | Pide volver a ingresar | ☐ |
-| 15 | Cualquiera | `docker compose stop api` y apretar F5 | "No se pudo conectar con el servidor…" sin cerrarse la app; `docker compose start api` | ☐ |
-| 16 | Inicio | "Abrir dashboard web" | Abre http://localhost:8501 en el navegador | ☐ |
+| 1 | Login | Servidor `localhost:8000`, email y contraseña incorrecta | "Email o contraseña incorrectos" en rojo | ✔ |
+| 2 | Login | Contraseña correcta | Abre la ventana principal con tu nombre y rol arriba | ✔ |
+| 3 | Inicio | Mirar las tarjetas | Conteos de vencidas, próximos 7 días y clientes activos | ✔ |
+| 4 | Clientes | Nuevo cliente "ACME SA" y después otro "acme sa" | El segundo marca el nombre en rojo: "Ya existe un cliente…" | ✔ |
+| 5 | Clientes | Buscar "acm" | Aparece ACME SA | ✔ |
+| 6 | Facturas | Nueva factura, importe `125.000,50` | En la lista: $ 125.000,50, estado Pendiente | ✔ |
+| 7 | Facturas | Otra con el mismo número para el mismo cliente | Número resaltado: "Ya existe una factura con ese número…" | ✔ |
+| 8 | Facturas | Registrar pago de `25.000,25` | Saldo $ 100.000,25, estado Parcial (HU04) | ✔ |
+| 9 | Facturas | Registrar pago de `200.000` | Pregunta si el excedente queda como saldo a favor; "No" deja el formulario abierto | ✔ |
+| 10 | Facturas | Doble clic rápido en "Registrar pago" | Un solo pago en el detalle | ✔ |
+| 11 | Facturas → Ver detalle | Seleccionar un pago → Anular, motivo "cheque rechazado" (admin) | El saldo vuelve a subir; el pago figura "Anulado: cheque rechazado" (HU09) | ✔ |
+| 12 | Saldo a favor | Elegir cliente → Cobro a cuenta $ 10.000 → Imputar a factura | Disponible baja y el saldo de la factura también | ✔ |
+| 13 | Configuración | Como **operador** | No aparecen "Usuarios" ni los botones "Anular" | ✔ |
+| 14 | Configuración | Cambiar contraseña | Pide volver a ingresar | ✔ |
+| 15 | Cualquiera | `docker compose stop api` y apretar F5 | "No se pudo conectar con el servidor…" sin cerrarse la app; `docker compose start api` | ✔ |
+| 16 | Inicio | "Abrir dashboard web" | Abre http://localhost:8501 en el navegador | ✔ |
 
 ## 3. Ejecutable e instalador
 
