@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # --- Aplicación ---
     app_name: str = "CashFlow Manager API"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     app_env: Literal["development", "test", "production"] = "development"
     log_level: str = "INFO"
     app_timezone: str = "America/Argentina/Buenos_Aires"
@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     secret_key: str = Field(default="cambiar-esta-clave-en-env", min_length=16)
     # Orígenes permitidos para CORS, separados por coma (sin comodines en prod).
     cors_origins: str = "http://localhost:8501"
+    # Tokens: acceso corto (JWT) + refresh rotatorio (opaco, guardado como hash).
+    access_token_minutes: int = Field(default=15, ge=1, le=120)
+    refresh_token_days: int = Field(default=7, ge=1, le=60)
+    # Bloqueo por intentos fallidos de login (por email).
+    login_max_attempts: int = Field(default=5, ge=1)
+    login_lockout_minutes: int = Field(default=15, ge=1)
 
     # --- Base de datos ---
     postgres_host: str = "localhost"

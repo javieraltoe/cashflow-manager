@@ -7,17 +7,21 @@
   .\scripts\dev.ps1 up         # levanta db + api + dashboard en Docker
   .\scripts\dev.ps1 check      # verifica que todo responda
   .\scripts\dev.ps1 test       # corre los tests
+  .\scripts\dev.ps1 create-admin admin@miempresa.com.ar "Nombre Apellido"
   .\scripts\dev.ps1 help       # lista de comandos
 #>
 param(
     [Parameter(Position = 0)]
     [ValidateSet("help", "setup", "up", "down", "reset-db", "logs", "ps", "db",
                  "migrate", "api", "dashboard", "desktop", "test", "lint",
-                 "format", "check")]
+                 "format", "check", "create-admin", "revision")]
     [string]$Task = "help",
 
     [Parameter(Position = 1)]
-    [string]$Arg = ""
+    [string]$Arg = "",
+
+    [Parameter(Position = 2)]
+    [string]$Arg2 = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,7 +55,8 @@ switch ($Task) {
     "help" {
         Get-Help $PSCommandPath -Detailed | Out-Host
         Write-Host "Comandos: setup, up, down, reset-db, logs [servicio], ps, db, migrate,"
-        Write-Host "          api, dashboard, desktop, test, lint, format, check"
+        Write-Host "          api, dashboard, desktop, test, lint, format, check,"
+        Write-Host "          create-admin <email> <nombre>, revision <mensaje>"
     }
 
     "setup" {
@@ -116,6 +121,21 @@ switch ($Task) {
         Assert-Venv
         Push-Location backend
         try { Invoke-Native $Py @("-m", "alembic", "upgrade", "head") } finally { Pop-Location }
+    }
+
+    "create-admin" {
+        Assert-Venv
+        if (-not $Arg -or -not $Arg2) { throw 'Uso: .\scripts\dev.ps1 create-admin <email> "<nombre>"' }
+        Push-Location backend
+        try { Invoke-Native $Py @("-m", "app.cli", "create-admin", "--email", $Arg, "--name", $Arg2) } finally { Pop-Location }
+    }
+
+    "revision" {
+        # Genera una migracion nueva comparando modelos vs base (revisar SIEMPRE el archivo).
+        Assert-Venv
+        if (-not $Arg) { throw 'Uso: .\scripts\dev.ps1 revision "descripcion del cambio"' }
+        Push-Location backend
+        try { Invoke-Native $Py @("-m", "alembic", "revision", "--autogenerate", "-m", $Arg) } finally { Pop-Location }
     }
 
     "api" {

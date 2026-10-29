@@ -17,6 +17,5 @@
     "**/__pycache__": true,
     "**/.pytest_cache": true,
     "**/.ruff_cache": true
-  },
-  "python.terminal.useEnvFile": true
+  }
 }

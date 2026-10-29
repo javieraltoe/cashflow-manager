@@ -10,7 +10,8 @@ cobranzas, con un dashboard web privado de indicadores.
 | Dashboard web | Streamlit · Plotly (solo consume la API) | Docker (`dashboard`) |
 | Escritorio | PySide6 · httpx · PyInstaller | Windows, proceso local |
 
-Estado: **Sprint 0 — setup**. Ver `docs/architecture/ADR-0001-sprint0.md`.
+Estado: **Sprint 1 — dominio** (auth, clientes, facturas). Decisiones en
+`docs/architecture/ADR-0001-sprint0.md` y `ADR-0002-sprint1.md`.
 
 ---
 
@@ -74,6 +75,15 @@ Editá `.env` y cambiá al menos `POSTGRES_PASSWORD` y `SECRET_KEY`:
 > Si la opción A está corriendo, la API ya ocupa el puerto 8000: frená el
 > contenedor con `docker compose stop api` antes de usar la opción B.
 
+### Primer administrador
+
+```powershell
+.\scripts\dev.ps1 create-admin admin@miempresa.com.ar "Administrador"   # pide la contraseña
+```
+
+Después, en <http://localhost:8000/docs> → `POST /auth/login` → copiar `access_token`
+→ botón **Authorize**.
+
 ### App de escritorio
 
 ```powershell
@@ -88,6 +98,17 @@ Editá `.env` y cambiá al menos `POSTGRES_PASSWORD` y `SECRET_KEY`:
 .\scripts\dev.ps1 test      # pytest (los de integración necesitan la base levantada)
 ```
 
+Los tests de integración usan una base aparte, `cashflow_test`, que se crea y migra sola.
+Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
+
+| Escenario | Resultado esperado |
+|---|---|
+| Sin Docker | `47 passed, 64 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `111 passed` |
+
+Para crear una migración nueva después de cambiar un modelo:
+`.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).
+
 El CI (`.github/workflows/ci.yml`) corre lint, migraciones y tests contra un
 PostgreSQL 16 real, y construye las imágenes Docker.
 
@@ -101,7 +122,21 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | Borrar datos locales | `.\scripts\dev.ps1 reset-db` |
 | Consola SQL | `docker compose exec db psql -U cashflow -d cashflow` |
 
-## 6. Estructura
+## 6. API v1 (Sprint 1)
+
+| Endpoint | Quién | Descripción |
+|---|---|---|
+| `POST /auth/login` · `/auth/refresh` · `/auth/logout` | público | Tokens: access 15 min + refresh rotatorio 7 días |
+| `GET /me` · `POST /me/password` | autenticado | Perfil y cambio de contraseña |
+| `GET/POST /users` · `PATCH /users/{id}` | admin | Gestión de usuarios y roles |
+| `GET/POST /clients` · `GET/PATCH /clients/{id}` | autenticado | `q`, `is_active`, `sort`, `page`, `page_size` |
+| `GET/POST /invoices` · `GET/PATCH /invoices/{id}` | autenticado (anular: admin) | Filtros `client_id`, `status`, `issue_from/to`, `due_from/to`, `q`, `include_void` |
+
+Las facturas devuelven `paid_amount`, `balance`, `status` (PENDIENTE · PARCIAL · VENCIDA ·
+PAGADA · ANULADA) y `days_overdue`, calculados con la fecha de hoy en Buenos Aires.
+Los montos viajan como string decimal (`"125000.50"`).
+
+## 7. Estructura
 
 ```
 cashflow-manager/
@@ -114,7 +149,7 @@ cashflow-manager/
   docker-compose.yml  .env.example  pyproject.toml  .github/workflows/ci.yml
 ```
 
-## 7. Seguridad (desde el día 1)
+## 8. Seguridad (desde el día 1)
 
 - `.env` nunca se versiona; `.env.example` no contiene secretos reales.
 - PostgreSQL, API y dashboard se publican solo en `127.0.0.1`.
@@ -122,8 +157,10 @@ cashflow-manager/
   y `/docs` queda deshabilitado.
 - Errores JSON uniformes sin detalles internos: `{"error": {"code", "message", "field"}}`.
 - Montos siempre `NUMERIC(15,2)` / `Decimal`, nunca `float`.
+- Contraseñas con Argon2id; refresh tokens guardados solo como hash; bloqueo tras 5 intentos.
+- Rol y estado del usuario verificados contra la base en cada request.
 
-## 8. Solución de problemas
+## 9. Solución de problemas
 
 | Síntoma | Causa probable / solución |
 |---|---|
@@ -132,3 +169,5 @@ cashflow-manager/
 | `dev.ps1 cannot be loaded` | Falta `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
 | Health devuelve 503 | La API corre pero no ve la base: `.\scripts\dev.ps1 logs db`. |
 | Docker no arranca | Abrí Docker Desktop y esperá a "Engine running". |
+| `429 too_many_attempts` al loguear | 5 fallos seguidos: esperá 15 min o reiniciá la API (`docker compose restart api`). |
+| Tests: `permission denied to create database` | El usuario de `.env` no puede crear bases: creá `cashflow_test` a mano o definí `TEST_POSTGRES_DB`. |

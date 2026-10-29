@@ -1,1 +1,18 @@
-"""Modelos ORM. En el Sprint 1 se importan acá para que Alembic los detecte."""
+"""Modelos ORM. Importarlos acá los registra en Base.metadata (lo usa Alembic)."""
+
+from app.models.audit import AuditEvent, ImportBatch
+from app.models.client import Client
+from app.models.invoice import Invoice
+from app.models.payment import Payment
+from app.models.user import RefreshToken, Role, User
+
+__all__ = [
+    "AuditEvent",
+    "Client",
+    "ImportBatch",
+    "Invoice",
+    "Payment",
+    "RefreshToken",
+    "Role",
+    "User",
+]
