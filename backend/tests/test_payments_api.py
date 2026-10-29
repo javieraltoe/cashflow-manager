@@ -6,7 +6,7 @@ from datetime import date
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditEvent
+from app.models import AuditEvent, Payment
 from tests.helpers import set_today
 
 pytestmark = pytest.mark.integration
@@ -51,6 +51,49 @@ def _pay(api, headers, invoice_id, amount="25000.25", **data):
 
 def _get_invoice(api, headers, invoice_id) -> dict:
     return api.get(f"{INVOICES}/{invoice_id}", headers=headers).json()
+
+
+# ---------- Criterios de aceptación, con los ejemplos de las HU ----------
+
+
+def test_hu04_pago_parcial_exacto_y_no_se_paga_mas_de_lo_adeudado(api, operator_h, client_id):
+    """HU04: factura de $1.000, pago de $400 → saldo $600,00 exacto; un pago de $700 se rechaza."""
+    inv_id = _invoice(api, operator_h, client_id, invoice_number="HU04", amount="1000.00")
+    resp = _pay(api, operator_h, inv_id, "400.00")
+    assert resp.status_code == 201
+    assert resp.json()["invoice_balance"] == "600.00"
+    assert _get_invoice(api, operator_h, inv_id)["balance"] == "600.00"
+
+    resp = _pay(api, operator_h, inv_id, "700.00")
+    assert resp.status_code == 409
+    assert resp.json()["error"]["code"] == "amount_exceeds_balance"
+    assert _get_invoice(api, operator_h, inv_id)["balance"] == "600.00"
+
+
+def test_hu09_anular_pago_con_motivo_sube_el_saldo_y_queda_auditado(
+    api, db, admin, admin_h, operator_h, client_id
+):
+    """HU09: el admin anula con motivo; el pago no se borra, el saldo vuelve a subir y queda
+    registrado quién lo anuló, cuándo y por qué."""
+    inv_id = _invoice(api, operator_h, client_id, invoice_number="HU09", amount="1000.00")
+    pay_id = _pay(api, operator_h, inv_id, "400.00", method="cheque").json()["id"]
+
+    resp = api.post(f"{URL}/{pay_id}/void", headers=admin_h, json={"reason": "cheque rechazado"})
+    assert resp.status_code == 200
+    assert resp.json()["invoice_balance"] == "1000.00"
+    assert _get_invoice(api, operator_h, inv_id)["balance"] == "1000.00"
+
+    fila = db.get(Payment, uuid.UUID(pay_id))  # no se borró
+    db.refresh(fila)
+    assert fila.is_void is True
+    assert fila.void_reason == "cheque rechazado"  # por qué
+    assert fila.voided_at is not None  # cuándo
+    ev = db.scalars(
+        select(AuditEvent).where(AuditEvent.entity_id == fila.id, AuditEvent.action == "void")
+    ).one()
+    assert ev.actor_user_id == admin.id  # quién
+    assert ev.created_at is not None
+    assert ev.details["reason"] == "cheque rechazado"
 
 
 # ---------- Registro ----------

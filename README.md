@@ -103,8 +103,8 @@ Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
 
 | Escenario | Resultado esperado |
 |---|---|
-| Sin Docker | `47 passed, 118 skipped` |
-| Con `.\scripts\dev.ps1 up` o `db` | `165 passed` |
+| Sin Docker | `47 passed, 120 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `167 passed` |
 
 Para crear una migración nueva después de cambiar un modelo:
 `.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).

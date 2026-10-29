@@ -15,10 +15,10 @@ En <http://localhost:8000/docs> tienen que aparecer las secciones **payments** y
 
 ```powershell
 .\scripts\dev.ps1 lint           # All checks passed!
-.\scripts\dev.ps1 test           # 165 passed  (con Docker arriba)
+.\scripts\dev.ps1 test           # 167 passed  (con Docker arriba)
 ```
 
-Sin Docker el resultado esperado es `47 passed, 118 skipped`.
+Sin Docker el resultado esperado es `47 passed, 120 skipped`.
 
 ## 3. Prueba manual de la API (PowerShell)
 
@@ -101,15 +101,17 @@ try {
 
 | HU | Criterio | Cómo se verifica | ✔ |
 |---|---|---|---|
+| HU04 | Factura de $1.000, pago de $400 → saldo $600,00 exacto; un pago de $700 se rechaza | `test_hu04_pago_parcial_exacto_y_no_se_paga_mas_de_lo_adeudado` | ☐ |
+| HU09 | Anular con motivo "cheque rechazado": el pago no se borra, el saldo sube y queda quién, cuándo y por qué | `test_hu09_anular_pago_con_motivo_sube_el_saldo_y_queda_auditado` + paso 3 | ☐ |
 | HU04 | Pago parcial baja el saldo y deja la factura PARCIAL | `test_pago_parcial_actualiza_saldo_y_estado` + paso 3 | ☐ |
 | HU04 | Pagos hasta el total → PAGADA; el sobrepago sin confirmar se rechaza | `test_varios_pagos_hasta_el_total_pagada`, `test_pago_mayor_al_saldo_409` + paso 3 | ☐ |
 | HU04 | Importe, medio y fecha validados (sin fechas futuras; anticipos permitidos) | `test_importe_invalido_422`, `test_medio_de_pago_invalido_422`, `test_fechas_de_pago` | ☐ |
 | HU04 | Un reintento con la misma `Idempotency-Key` no duplica el pago | `test_reintento_con_la_misma_clave_no_duplica`, `test_doble_envio_simultaneo_con_la_misma_clave` + paso 3 | ☐ |
-| §4 | Solo el administrador anula, con motivo; el saldo se recupera | `test_operador_no_puede_anular_pago`, `test_anular_exige_motivo`, `test_admin_anula_pago_y_se_recupera_el_saldo` + paso 3 | ☐ |
+| HU09 | Solo el administrador anula, con motivo; el saldo se recupera | `test_operador_no_puede_anular_pago`, `test_anular_exige_motivo`, `test_admin_anula_pago_y_se_recupera_el_saldo` + paso 3 | ☐ |
 | Saldo a favor | Sobrepago confirmado deja el excedente como crédito | `test_sobrepago_confirmado_deja_saldo_a_favor` + paso 3 | ☐ |
 | Saldo a favor | Cobro a cuenta sin factura | `test_cobro_a_cuenta`, `test_cobro_a_cuenta_validaciones` + paso 3 | ☐ |
 | Saldo a favor | Imputación manual, sin superar el disponible ni el saldo | `test_imputar_saldo_a_favor_a_otra_factura`, `test_imputar_mas_que_el_disponible_409` + paso 3 | ☐ |
 | Saldo a favor | No se anula un crédito ya imputado | `test_anular_pago_con_excedente_ya_usado_se_bloquea`, `test_anular_cobro_a_cuenta` + paso 3 | ☐ |
-| §16 | Dos cobros simultáneos no superan el importe (`FOR UPDATE`) | `test_dos_pagos_simultaneos_no_superan_el_importe` | ☐ |
+| HU04 | Dos cobros simultáneos no superan el importe (`FOR UPDATE`) | `test_dos_pagos_simultaneos_no_superan_el_importe` | ☐ |
 | §16 | Dos imputaciones simultáneas no gastan dos veces el mismo crédito | `test_dos_imputaciones_simultaneas_no_gastan_dos_veces_el_credito` | ☐ |
-| §3 | Registro y anulación quedan auditados | `test_registro_queda_auditado`, `test_admin_anula_pago_y_se_recupera_el_saldo` | ☐ |
+| HU09 | Registro y anulación quedan auditados | `test_registro_queda_auditado`, `test_admin_anula_pago_y_se_recupera_el_saldo` | ☐ |
