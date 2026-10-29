@@ -1,5 +1,5 @@
-"""Pagos. La tabla se crea en el Sprint 1 (el saldo depende de ella); el servicio de
-registro/anulación con bloqueo FOR UPDATE se implementa en el Sprint 2."""
+"""Pagos. El servicio de registro/anulación con bloqueo FOR UPDATE está en
+services/payments.py."""
 
 import uuid
 from datetime import date, datetime
@@ -46,3 +46,5 @@ class Payment(UUIDPk, CreatedAt, Base):
         Uuid, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
     voided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Clave que manda el cliente (header Idempotency-Key): un reintento no duplica el pago.
+    idempotency_key: Mapped[uuid.UUID | None] = mapped_column(Uuid, unique=True)

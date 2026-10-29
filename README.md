@@ -10,8 +10,8 @@ cobranzas, con un dashboard web privado de indicadores.
 | Dashboard web | Streamlit · Plotly (solo consume la API) | Docker (`dashboard`) |
 | Escritorio | PySide6 · httpx · PyInstaller | Windows, proceso local |
 
-Estado: **Sprint 1 — dominio** (auth, clientes, facturas). Decisiones en
-`docs/architecture/ADR-0001-sprint0.md` y `ADR-0002-sprint1.md`.
+Estado: **Sprint 2 — pagos y saldo a favor** (sobre auth, clientes y facturas del Sprint 1). Decisiones en
+`docs/architecture/ADR-0001-sprint0.md`, `ADR-0002-sprint1.md` y `ADR-0003-sprint2.md`.
 
 ---
 
@@ -103,8 +103,8 @@ Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
 
 | Escenario | Resultado esperado |
 |---|---|
-| Sin Docker | `47 passed, 64 skipped` |
-| Con `.\scripts\dev.ps1 up` o `db` | `111 passed` |
+| Sin Docker | `47 passed, 118 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `165 passed` |
 
 Para crear una migración nueva después de cambiar un modelo:
 `.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).
@@ -122,7 +122,7 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | Borrar datos locales | `.\scripts\dev.ps1 reset-db` |
 | Consola SQL | `docker compose exec db psql -U cashflow -d cashflow` |
 
-## 6. API v1 (Sprint 1)
+## 6. API v1 (Sprint 2)
 
 | Endpoint | Quién | Descripción |
 |---|---|---|
@@ -131,10 +131,17 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | `GET/POST /users` · `PATCH /users/{id}` | admin | Gestión de usuarios y roles |
 | `GET/POST /clients` · `GET/PATCH /clients/{id}` | autenticado | `q`, `is_active`, `sort`, `page`, `page_size` |
 | `GET/POST /invoices` · `GET/PATCH /invoices/{id}` | autenticado (anular: admin) | Filtros `client_id`, `status`, `issue_from/to`, `due_from/to`, `q`, `include_void` |
+| `GET/POST /payments` · `GET /payments/{id}` | autenticado | Cobro parcial o total; el excedente queda como saldo a favor solo con `allow_credit`. Header opcional `Idempotency-Key`. Filtros `invoice_id`, `client_id`, `date_from/to`, `method`, `include_void` |
+| `POST /payments/{id}/void` | admin | Anulación lógica con `reason` obligatorio |
+| `GET /clients/{id}/credit` · `GET/POST /credits` · `GET /credits/{id}` | autenticado | Saldo a favor del cliente y cobros a cuenta (sin factura) |
+| `POST /credits/apply` | autenticado | Imputar saldo a favor a una factura del cliente |
+| `POST /credits/{id}/void` | admin | Anular un cobro a cuenta (bloqueado si ya se imputó) |
 
 Las facturas devuelven `paid_amount`, `balance`, `status` (PENDIENTE · PARCIAL · VENCIDA ·
 PAGADA · ANULADA) y `days_overdue`, calculados con la fecha de hoy en Buenos Aires.
-Los montos viajan como string decimal (`"125000.50"`).
+Los montos viajan como string decimal (`"125000.50"`). Cada pago devuelve además
+`invoice_balance` e `invoice_status` actualizados. Registrar y anular bloquean la factura
+con `SELECT … FOR UPDATE`, así dos cobros simultáneos nunca superan el importe.
 
 ## 7. Estructura
 

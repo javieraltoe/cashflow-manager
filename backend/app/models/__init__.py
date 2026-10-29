@@ -2,6 +2,7 @@
 
 from app.models.audit import AuditEvent, ImportBatch
 from app.models.client import Client
+from app.models.credit import ClientCredit
 from app.models.invoice import Invoice
 from app.models.payment import Payment
 from app.models.user import RefreshToken, Role, User
@@ -9,6 +10,7 @@ from app.models.user import RefreshToken, Role, User
 __all__ = [
     "AuditEvent",
     "Client",
+    "ClientCredit",
     "ImportBatch",
     "Invoice",
     "Payment",

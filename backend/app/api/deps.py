@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import Depends, status
+from fastapi import Depends, Header, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -70,3 +70,9 @@ def get_today() -> date:
 
 
 Today = Annotated[date, Depends(get_today)]
+
+
+IdempotencyKey = Annotated[
+    uuid.UUID | None,
+    Header(description="UUID único por operación: un reintento con la misma clave no duplica"),
+]

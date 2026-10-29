@@ -44,7 +44,7 @@ def _invoice(api, headers, client_id, **data):
 
 
 def _pay(db, invoice_id, amount, user, void=False, when=HOY):
-    """Inserta un pago directo en la base (el servicio de pagos llega en el Sprint 2)."""
+    """Inserta un pago directo en la base (sin pasar por las reglas del servicio de pagos)."""
     db.add(
         Payment(
             invoice_id=uuid.UUID(invoice_id),

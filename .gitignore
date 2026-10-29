@@ -2,6 +2,8 @@
 .env
 *.env
 !.env.example
+# Credenciales locales
+user_pass.md
 
 # Python
 __pycache__/

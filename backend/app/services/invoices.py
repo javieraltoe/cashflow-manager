@@ -57,7 +57,7 @@ class InvoiceFilters:
 # ---------- Expresiones SQL de saldo y estado ----------
 
 
-def _paid_subquery():
+def paid_subquery():
     """Suma de pagos vigentes (no anulados) por factura."""
     return (
         select(Payment.invoice_id, func.sum(Payment.amount).label("paid"))
@@ -80,7 +80,7 @@ def status_expression(amount, paid, due_date, is_void, today: date):
 
 
 def _base_query(today: date) -> Select:
-    paid_sq = _paid_subquery()
+    paid_sq = paid_subquery()
     paid = func.coalesce(paid_sq.c.paid, 0)
     st = status_expression(Invoice.amount, paid, Invoice.due_date, Invoice.is_void, today)
     return (
@@ -233,7 +233,7 @@ def create_invoice(db: Session, data: InvoiceCreate, actor: User, today: date) -
 def update_invoice(
     db: Session, invoice_id: uuid.UUID, data: InvoiceUpdate, actor: User, today: date
 ) -> InvoiceOut:
-    # Bloqueo de la fila: evita carreras con el registro de pagos (Sprint 2).
+    # Bloqueo de la fila: evita carreras con el registro de pagos (ver services/payments.py).
     invoice = db.scalar(select(Invoice).where(Invoice.id == invoice_id).with_for_update())
     if invoice is None:
         raise _not_found()
