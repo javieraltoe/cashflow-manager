@@ -2,6 +2,8 @@
 .env
 *.env
 !.env.example
+.env.*
+!.env.production.example
 # Credenciales locales
 user_pass.md
 
@@ -23,6 +25,9 @@ htmlcov/
 # Backups y datos locales
 scripts/backup/*.dump
 scripts/backup/*.sql
+/backups/
+*.dump
+*.dump.partial
 *.csv.tmp
 
 # Editor / SO

@@ -10,8 +10,9 @@ cobranzas, con un dashboard web privado de indicadores.
 | Dashboard web | Streamlit · Plotly (solo consume la API) | Docker (`dashboard`) |
 | Escritorio | PySide6 · httpx · PyInstaller | Windows, proceso local |
 
-Estado: **Sprint 4 — indicadores y dashboard** (sobre la API, el escritorio y los Sprints 1 a 3).
-Decisiones en `docs/architecture/ADR-0001-sprint0.md` a `ADR-0005-sprint4.md`.
+Estado: **MVP 1.0.0 — Sprint 5 cerrado** (CSV, exportación, backups, despliegue HTTPS, manual).
+Decisiones en `docs/architecture/ADR-0001-sprint0.md` a `ADR-0006-sprint5.md` · estado de
+cierre en `docs/checklist-cierre-mvp.md`.
 
 ---
 
@@ -127,8 +128,8 @@ Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
 
 | Escenario | Resultado esperado |
 |---|---|
-| Sin Docker | `113 passed, 193 skipped` |
-| Con `.\scripts\dev.ps1 up` o `db` | `305 passed` (backend, escritorio y dashboard, incluidas las interfaces) |
+| Sin Docker | `114 passed, 224 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `336 passed, 1 skipped` (el skip es el backup local si no tenés `pg_dump`; en el CI corre) |
 
 Para crear una migración nueva después de cambiar un modelo:
 `.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).
@@ -143,6 +144,8 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | Ver contenedores | `.\scripts\dev.ps1 ps` |
 | Logs de la API | `.\scripts\dev.ps1 logs api` |
 | Detener todo | `.\scripts\dev.ps1 down` |
+| Backup de la base | `.\scripts\dev.ps1 backup` |
+| Probar que el backup restaura | `.\scripts\dev.ps1 backup-verify` |
 | Borrar datos locales | `.\scripts\dev.ps1 reset-db` |
 | Consola SQL | `docker compose exec db psql -U cashflow -d cashflow` |
 
@@ -163,6 +166,8 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | `GET /metrics/overview` | autenticado | KPIs a hoy + cobrado del período (`date_from`, `date_to`, `client_id`) |
 | `GET /metrics/collections-monthly` | autenticado | Cobrado por mes, todos los meses del período |
 | `GET /metrics/aging` · `/metrics/top-debtors` · `/metrics/upcoming` | autenticado | Vencido por antigüedad, principales deudores (`limit`) y próximos vencimientos (`days`) |
+| `POST /imports/invoices/preview` · `/imports/invoices/commit` | autenticado | CSV (multipart `file` + `create_missing_clients`): valida sin guardar / carga las filas válidas |
+| `GET /exports/invoices.csv` | autenticado | Mismos filtros que `/invoices`, sin paginar (máx. 50.000 filas) |
 
 Las facturas devuelven `paid_amount`, `balance`, `status` (PENDIENTE · PARCIAL · VENCIDA ·
 PAGADA · ANULADA) y `days_overdue`, calculados con la fecha de hoy en Buenos Aires.
@@ -178,7 +183,8 @@ cashflow-manager/
   dashboard/          Streamlit: app.py, components/ (api, data, charts, fmt), tests/
   desktop/            PySide6: app/core (sin Qt), app/services (cliente API), app/views,
                       app/widgets, packaging/ (PyInstaller + Inno Setup), tests/
-  infra/              docker/, nginx/, aws/        (despliegue: Sprint 5)
+  infra/              caddy/Caddyfile (HTTPS), aws/ (EC2, IAM, S3, cron de backups)
+  docker-compose.prod.yml  .env.production.example   (producción)
   scripts/            dev.ps1, build/build-desktop.ps1, seed/, backup/
   docs/               requirements/, architecture/, api/, runbook/
   docker-compose.yml  .env.example  pyproject.toml  .github/workflows/ci.yml
@@ -195,7 +201,17 @@ cashflow-manager/
 - Contraseñas con Argon2id; refresh tokens guardados solo como hash; bloqueo tras 5 intentos.
 - Rol y estado del usuario verificados contra la base en cada request.
 
-## 9. Solución de problemas
+## 9. Producción y documentación de cierre
+
+| Documento | Para qué |
+|---|---|
+| `docs/runbook/despliegue-aws.md` | Servidor en AWS con HTTPS, backups en S3, costos y alertas |
+| `docs/runbook/backup-restore.md` | Backups, prueba de restauración y recuperación ante incidentes |
+| `docs/manual/manual-usuario.md` | Manual de uso para el cliente |
+| `docs/comercial/guion-demo.md` · `propuesta-plantilla.md` | Demo de 15 minutos y propuesta comercial |
+| `docs/checklist-cierre-mvp.md` | Estado de cada ítem del §18 y de las 10 historias |
+
+## 10. Solución de problemas
 
 | Síntoma | Causa probable / solución |
 |---|---|

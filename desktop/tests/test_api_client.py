@@ -265,3 +265,30 @@ def test_resumen_de_inicio(admin_api):
     assert resumen.due_soon_balance == D("20.00")
     assert resumen.total_receivable == D("1030.00")
     assert [i["invoice_number"] for i in resumen.upcoming] == ["S-1", "S-2"]
+
+
+# ---------- Importación y exportación CSV ----------
+
+
+def test_importar_y_exportar_csv(admin_api):
+    admin_api.create_client({"name": "ACME SA"})
+    csv_bytes = (
+        b"client_name,invoice_number,issue_date,due_date,amount,description\n"
+        b"ACME SA,F-1,2026-10-01,2026-10-30,125000.50,Servicio\n"
+        b"Otro SA,F-2,2026-10-01,2026-10-30,10,\n"
+    )
+    prev = admin_api.preview_import(csv_bytes, "facturas.csv")
+    assert (prev["valid_count"], prev["rejected_count"]) == (1, 1)
+    res = admin_api.commit_import(csv_bytes, "facturas.csv", create_missing=True)
+    assert res["imported_count"] == 2
+    assert res["created_clients"] == ["Otro SA"]
+    content = admin_api.export_invoices(q="F-1")
+    lines = content.decode("utf-8-sig").splitlines()
+    assert lines[1].startswith("ACME SA,F-1,2026-10-01,2026-10-30,125000.50,Servicio")
+
+
+def test_importar_archivo_invalido_da_error_claro(admin_api):
+    with pytest.raises(ApiError) as exc:
+        admin_api.preview_import(b"a,b\n1,2\n", "x.csv")
+    assert exc.value.code == "invalid_columns"
+    assert exc.value.field == "file"

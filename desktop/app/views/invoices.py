@@ -1,6 +1,8 @@
-"""Facturas: listado con filtros, alta/edición, anulación y detalle con sus pagos (HU03/HU05)."""
+"""Facturas: listado con filtros, alta/edición, anulación, detalle con sus pagos y
+exportación CSV (HU03/HU05/HU08)."""
 
 from datetime import timedelta
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QDialogButtonBox,
@@ -23,7 +25,7 @@ from desktop.app.core.formatting import (
     today_local,
 )
 from desktop.app.views.base import AppContext, BasePage, FormDialog
-from desktop.app.widgets import messages
+from desktop.app.widgets import files, messages
 from desktop.app.widgets.common import (
     ChoiceCombo,
     DateEdit,
@@ -290,6 +292,9 @@ class InvoicesPage(BasePage):
         self.pay_btn = QPushButton("Registrar pago")
         self.void_btn = QPushButton("Anular factura")
         self.void_btn.setVisible(ctx.api.is_admin)
+        self.export_btn = QPushButton("Exportar CSV")
+        self.export_btn.setToolTip("Exporta todas las facturas que cumplen los filtros")
+        self.export_btn.clicked.connect(self.export_csv)
         self.new_btn.clicked.connect(self.create)
         self.edit_btn.clicked.connect(self.edit_selected)
         self.detail_btn.clicked.connect(self.open_selected)
@@ -298,6 +303,7 @@ class InvoicesPage(BasePage):
         for b in (self.new_btn, self.edit_btn, self.detail_btn, self.pay_btn, self.void_btn):
             actions.addWidget(b)
         actions.addStretch(1)
+        actions.addWidget(self.export_btn)
         self._clients_loaded = False
 
     def _load_clients(self) -> None:
@@ -310,27 +316,48 @@ class InvoicesPage(BasePage):
         self.pager.reset()
         self.refresh()
 
+    def _filters(self) -> dict:
+        status = self.status.value()
+        return {
+            "client_id": self.client.value(),
+            "status": status,
+            "due_from": self.due_from.value(),
+            "due_to": self.due_to.value(),
+            "q": self.number.text().strip() or None,
+            "include_void": status == "ANULADA",
+            "sort": "due_date",
+        }
+
     def refresh(self) -> None:
         if not self._clients_loaded or self.ctx._clients is None:
             self._load_clients()
-        status = self.status.value()
         page = self.ctx.call(
             self,
             self.ctx.api.list_invoices,
-            client_id=self.client.value(),
-            status=status,
-            due_from=self.due_from.value(),
-            due_to=self.due_to.value(),
-            q=self.number.text().strip() or None,
-            include_void=status == "ANULADA",
             page=self.pager.page,
             page_size=PAGE_SIZE,
-            sort="due_date",
+            **self._filters(),
         )
         if page is None:
             return
         self.table.set_rows(page["items"])
         self.pager.update_total(page["total"])
+
+    def export_csv(self) -> None:
+        """Exporta TODAS las facturas que cumplen los filtros actuales (HU08)."""
+        target = files.ask_save_csv(self, f"facturas_{today_local():%Y%m%d}.csv")
+        if not target:
+            return
+        content = self.ctx.call(self, self.ctx.api.export_invoices, **self._filters())
+        if content is None:
+            return
+        try:
+            Path(target).write_bytes(content)
+        except OSError as exc:
+            messages.show_error(self, f"No se pudo guardar el archivo: {exc.strerror or exc}")
+            return
+        rows = max(0, content.count(b"\n") - 1)
+        messages.show_info(self, f"Se exportaron {rows} facturas a {target}")
 
     def _selected(self) -> dict | None:
         inv = self.table.selected()

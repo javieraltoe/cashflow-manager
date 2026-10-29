@@ -14,7 +14,7 @@ a = Analysis(
     binaries=[],
     # tzdata: Windows no trae base de zonas horarias (fechas de Buenos Aires).
     datas=[(ICON, "assets")] + collect_data_files("tzdata"),
-    hiddenimports=["tzdata"],
+    hiddenimports=["tzdata", "truststore"],
     excludes=["tkinter", "pytest", "fastapi", "sqlalchemy"],
     noarchive=False,
 )

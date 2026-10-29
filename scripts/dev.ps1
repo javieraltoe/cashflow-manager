@@ -15,7 +15,7 @@ param(
     [ValidateSet("help", "setup", "up", "down", "reset-db", "logs", "ps", "db",
                  "migrate", "api", "dashboard", "desktop", "test", "lint",
                  "format", "check", "create-admin", "revision", "build-desktop",
-                 "seed-demo", "seed-perf", "bench")]
+                 "seed-demo", "seed-perf", "bench", "backup", "backup-verify", "demo-link")]
     [string]$Task = "help",
 
     [Parameter(Position = 1)]
@@ -58,7 +58,8 @@ switch ($Task) {
         Write-Host "Comandos: setup, up, down, reset-db, logs [servicio], ps, db, migrate,"
         Write-Host "          api, dashboard, desktop, test, lint, format, check,"
         Write-Host "          create-admin <email> <nombre>, revision <mensaje>, build-desktop,"
-        Write-Host "          seed-demo [reset], seed-perf [reset], bench <email>"
+        Write-Host "          seed-demo [reset], seed-perf [reset], bench <email>,"
+        Write-Host "          backup, backup-verify <archivo.dump>, demo-link"
     }
 
     "setup" {
@@ -163,6 +164,34 @@ switch ($Task) {
         Assert-Venv
         if (-not $Arg) { throw 'Uso: .\scripts\dev.ps1 bench <email-admin>' }
         Invoke-Native $Py @("scripts\seed\bench_metrics.py", "--email", $Arg)
+    }
+
+    "demo-link" {
+        # Link HTTPS temporal al dashboard para que un cliente pruebe la demo (Cloudflare
+        # Tunnel rapido, sin cuenta). Solo con datos demo y un usuario demo; Ctrl+C lo cierra.
+        $cf = (Get-Command cloudflared -ErrorAction SilentlyContinue).Source
+        if (-not $cf) { $cf = "${env:ProgramFiles(x86)}\cloudflared\cloudflared.exe" }
+        if (-not (Test-Path $cf)) { throw "Falta cloudflared: winget install Cloudflare.cloudflared" }
+        Write-Step "Busca la linea https://....trycloudflare.com y mandasela al cliente (Ctrl+C para cerrar)"
+        & $cf tunnel --no-autoupdate --url "http://localhost:8501"
+    }
+
+    "backup" {
+        # Backup de la base que corre en Docker -> backups\cashflow_<base>_<fecha>.dump
+        Assert-Venv
+        Invoke-Native $Py @("scripts\backup\backup.py", "backup", "--keep", "30")
+    }
+
+    "backup-verify" {
+        # Restaura el backup en una base temporal y compara con la actual (prueba de restore)
+        Assert-Venv
+        if (-not $Arg) {
+            $last = Get-ChildItem "backups\*.dump" -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime | Select-Object -Last 1
+            if (-not $last) { throw "No hay backups. Ejecuta primero: .\scripts\dev.ps1 backup" }
+            $Arg = $last.FullName
+        }
+        Invoke-Native $Py @("scripts\backup\backup.py", "verify", $Arg)
     }
 
     "api" {

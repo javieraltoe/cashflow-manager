@@ -57,9 +57,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validar docker-compose
+      - name: Validar docker-compose (desarrollo y producción)
         run: |
           cp .env.example .env
           docker compose config --quiet
+          cp .env.production.example .env
+          docker compose -f docker-compose.prod.yml config --quiet
+          cp .env.example .env
+      - name: Validar scripts de infraestructura
+        run: |
+          bash -n infra/aws/bootstrap-ec2.sh infra/aws/backup-cron.sh
+          shellcheck --severity=warning infra/aws/*.sh
+          for f in infra/aws/*.json; do python3 -m json.tool "$f" > /dev/null; done
       - name: Build de imágenes
         run: docker compose build

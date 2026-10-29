@@ -145,6 +145,8 @@ class ApiClient:
         headers: dict[str, str] | None = None,
         auth: bool = True,
         raw: bool = False,
+        files: dict[str, tuple[str, bytes, str]] | None = None,
+        data: dict[str, str] | None = None,
         _retried: bool = False,
     ) -> Any:
         hdrs = dict(headers or {})
@@ -159,6 +161,8 @@ class ApiClient:
                 json=_jsonable(json) if json is not None else None,
                 params=_clean_params(params),
                 headers=hdrs,
+                files=files,
+                data=data,
             )
         except httpx.TimeoutException as exc:
             raise ApiError(
@@ -182,6 +186,8 @@ class ApiClient:
                     headers=headers,
                     auth=auth,
                     raw=raw,
+                    files=files,
+                    data=data,
                     _retried=True,
                 )
             self.user = None
@@ -289,6 +295,25 @@ class ApiClient:
 
     def metrics_upcoming(self, **params: Any) -> dict:
         return self._send("GET", "/metrics/upcoming", params=params)
+
+    # Importación y exportación CSV
+    def _import(self, step: str, content: bytes, filename: str, create_missing: bool) -> dict:
+        return self._send(
+            "POST",
+            f"/imports/invoices/{step}",
+            files={"file": (filename, content, "text/csv")},
+            data={"create_missing_clients": "true" if create_missing else "false"},
+        )
+
+    def preview_import(self, content: bytes, filename: str, create_missing: bool = False) -> dict:
+        return self._import("preview", content, filename, create_missing)
+
+    def commit_import(self, content: bytes, filename: str, create_missing: bool = False) -> dict:
+        return self._import("commit", content, filename, create_missing)
+
+    def export_invoices(self, **params: Any) -> bytes:
+        """CSV de facturas con los mismos filtros que list_invoices."""
+        return self._send("GET", "/exports/invoices.csv", params=params, raw=True).content
 
     # Saldo a favor
     def client_credit(self, client_id: str) -> dict:

@@ -19,6 +19,7 @@ from desktop.app.views.base import AppContext, BasePage
 from desktop.app.views.clients import ClientsPage
 from desktop.app.views.credits import CreditsPage
 from desktop.app.views.home import HomePage
+from desktop.app.views.imports import ImportPage
 from desktop.app.views.invoices import InvoicesPage
 from desktop.app.views.login import LoginDialog
 from desktop.app.views.payments import PaymentsPage
@@ -51,6 +52,7 @@ class MainWindow(QMainWindow):
         self.invoices = InvoicesPage(ctx)
         self.payments = PaymentsPage(ctx)
         self.credits = CreditsPage(ctx)
+        self.imports = ImportPage(ctx)
         self.settings = SettingsPage(ctx)
         self.pages: list[BasePage] = [
             self.home,
@@ -58,6 +60,7 @@ class MainWindow(QMainWindow):
             self.invoices,
             self.payments,
             self.credits,
+            self.imports,
             self.settings,
         ]
         self.stack = QStackedWidget()

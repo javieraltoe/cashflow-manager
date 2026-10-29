@@ -118,13 +118,8 @@ def to_out(invoice: Invoice, client_name: str, paid: Decimal, today: date) -> In
 # ---------- Consultas ----------
 
 
-def list_invoices(
-    db: Session,
-    filters: InvoiceFilters,
-    pagination: Pagination,
-    today: date,
-    sort: str = "due_date",
-) -> tuple[list[InvoiceOut], int]:
+def filtered_query(filters: InvoiceFilters, today: date) -> Select:
+    """Consulta de facturas con los filtros del listado (la usa también la exportación)."""
     stmt = _base_query(today)
     st_col = stmt.selected_columns.status
 
@@ -144,7 +139,17 @@ def list_invoices(
         stmt = stmt.where(st_col == filters.status.value)
     if not filters.include_void and filters.status != InvoiceStatus.ANULADA:
         stmt = stmt.where(Invoice.is_void.is_(False))
+    return stmt
 
+
+def list_invoices(
+    db: Session,
+    filters: InvoiceFilters,
+    pagination: Pagination,
+    today: date,
+    sort: str = "due_date",
+) -> tuple[list[InvoiceOut], int]:
+    stmt = filtered_query(filters, today)
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = db.execute(
         stmt.order_by(SORTS[sort], Invoice.id).offset(pagination.offset).limit(pagination.page_size)

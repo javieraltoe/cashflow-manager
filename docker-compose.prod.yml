@@ -1,0 +1,102 @@
+# CashFlow Manager - PRODUCCIÓN (un servidor, p. ej. AWS EC2) con HTTPS automático.
+#
+#   cp .env.production.example .env      # completar DOMAIN, ACME_EMAIL y secretos
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# - Caddy termina HTTPS (certificado de Let's Encrypt automático) y es lo único expuesto:
+#   puertos 80 y 443. La base, la API y el dashboard solo son accesibles dentro de la red
+#   interna de Docker.
+# - https://DOMINIO/api/...  -> API (también la usa la app de escritorio)
+# - https://DOMINIO/         -> dashboard web
+# Guía completa: docs/runbook/despliegue-aws.md
+
+name: cashflow
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Definir POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?Definir POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD}
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Sin "ports": la base NUNCA queda expuesta a Internet (spec §8).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging: *logging
+
+  api:
+    build:
+      context: ./backend
+    restart: always
+    env_file: .env
+    environment:
+      APP_ENV: production
+      # Mismo origen que el servicio db (--env-file), aunque env_file traiga otros valores.
+      SECRET_KEY: ${SECRET_KEY:?Definir SECRET_KEY}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      CORS_ORIGINS: https://${DOMAIN:?Definir DOMAIN}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Un solo proceso: el bloqueo de intentos de login vive en memoria (ADR-0002 #6).
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000
+             --proxy-headers --forwarded-allow-ips='*' --no-server-header"
+    logging: *logging
+
+  dashboard:
+    build:
+      context: ./dashboard
+    restart: always
+    environment:
+      API_BASE_URL: http://api:8000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    command: >
+      streamlit run app.py --server.address=0.0.0.0 --server.port=8501
+      --server.headless=true --browser.gatherUsageStats=false
+    logging: *logging
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Definir DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Definir ACME_EMAIL}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - dashboard
+    logging: *logging
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

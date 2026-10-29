@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SubirBackupsSoloAlPrefijo",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::NOMBRE-DEL-BUCKET/cashflow/*"
+    },
+    {
+      "Sid": "ListarParaVerificar",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::NOMBRE-DEL-BUCKET",
+      "Condition": { "StringLike": { "s3:prefix": ["cashflow/*"] } }
+    },
+    {
+      "Sid": "LeerBackupsParaRestaurar",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::NOMBRE-DEL-BUCKET/cashflow/*"
+    },
+    {
+      "Sid": "CifrarConLaClaveKMS",
+      "Effect": "Allow",
+      "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+      "Resource": "arn:aws:kms:REGION:CUENTA:key/ID-DE-LA-CLAVE"
+    }
+  ]
+}

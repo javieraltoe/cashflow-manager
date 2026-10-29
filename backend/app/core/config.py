@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # --- Aplicación ---
     app_name: str = "CashFlow Manager API"
-    app_version: str = "0.4.0"
+    app_version: str = "1.0.0"
     app_env: Literal["development", "test", "production"] = "development"
     log_level: str = "INFO"
     app_timezone: str = "America/Argentina/Buenos_Aires"

@@ -26,6 +26,7 @@ from desktop.app.views.credits import (  # noqa: E402
     CreditOnAccountDialog,
     CreditsPage,
 )
+from desktop.app.views.imports import ImportPage  # noqa: E402
 from desktop.app.views.invoices import (  # noqa: E402
     InvoiceDetailDialog,
     InvoiceDialog,
@@ -35,7 +36,7 @@ from desktop.app.views.login import LoginDialog  # noqa: E402
 from desktop.app.views.main_window import MainWindow  # noqa: E402
 from desktop.app.views.payments import PaymentDialog, VoidDialog  # noqa: E402
 from desktop.app.views.settings import SettingsPage, UserDialog  # noqa: E402
-from desktop.app.widgets import messages  # noqa: E402
+from desktop.app.widgets import files, messages  # noqa: E402
 from tests.helpers import TEST_PASSWORD  # noqa: E402
 
 pytestmark = pytest.mark.integration
@@ -156,7 +157,7 @@ def test_operador_no_ve_acciones_de_admin(operator_api):
     win = MainWindow(ctx)
     assert not win.invoices.void_btn.isVisibleTo(win.invoices)
     assert not win.payments.void_btn.isVisibleTo(win.payments)
-    win.nav.setCurrentRow(5)  # Configuración
+    win.nav.setCurrentRow(win.pages.index(win.settings))
     assert not win.settings.users_box.isVisibleTo(win.settings)
 
 
@@ -394,3 +395,66 @@ def test_cambio_de_password_pide_reingresar(ctx, msgs):
     page.repeat_pwd.setText("nueva-clave-segura-1")
     page.change_password()
     assert emitted == [True]
+
+
+# ---------- Importación y exportación CSV (HU07 / HU08) ----------
+
+
+def test_importar_csv_previsualiza_y_confirma(ctx, factura, tmp_path, monkeypatch, msgs):
+    hoy = today_local()
+    csv_path = tmp_path / "facturas.csv"
+    csv_path.write_text(
+        "client_name,invoice_number,issue_date,due_date,amount,description\n"
+        f"ACME SA,I-1,{hoy},{hoy + timedelta(days=30)},1500.50,Importada\n"
+        f"ACME SA,F-0001,{hoy},{hoy},10,ya existe\n"
+        f"Nadie SA,I-2,{hoy},{hoy},10,\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(files, "ask_open_csv", lambda _p: str(csv_path))
+    page = ImportPage(ctx)
+    page.choose_file()  # elige y previsualiza
+    assert "3 filas · 1 válidas · 2 con errores" in page.summary.text()
+    assert page.commit_btn.isEnabled()
+    assert ctx.api.list_invoices(q="I-1")["total"] == 0  # la previsualización no guarda
+
+    page.create_missing.setChecked(True)  # cambiar la opción obliga a previsualizar de nuevo
+    assert not page.commit_btn.isEnabled()
+    page.run_preview()
+    assert "2 válidas" in page.summary.text() and "1 clientes nuevos" in page.summary.text()
+
+    page.run_commit()
+    assert "Nadie SA" in msgs.questions[-1]
+    assert "2 facturas cargadas" in msgs.infos[-1]
+    assert ctx.api.list_invoices(q="I-")["total"] == 2
+    assert page.table.table_model.rowCount() == 1  # queda a la vista la fila rechazada
+
+
+def test_importar_archivo_invalido_muestra_error(ctx, tmp_path, monkeypatch, msgs):
+    bad = tmp_path / "malo.csv"
+    bad.write_text("columna,otra\n1,2\n", encoding="utf-8")
+    monkeypatch.setattr(files, "ask_open_csv", lambda _p: str(bad))
+    page = ImportPage(ctx)
+    page.choose_file()
+    assert "Columnas inválidas" in msgs.errors[-1]
+    assert not page.commit_btn.isEnabled()
+
+
+def test_descargar_plantilla(ctx, tmp_path, monkeypatch):
+    target = tmp_path / "plantilla.csv"
+    monkeypatch.setattr(files, "ask_save_csv", lambda _p, _n: str(target))
+    ImportPage(ctx).save_template()
+    assert target.read_text(encoding="utf-8").startswith("client_name,invoice_number")
+
+
+def test_exportar_facturas_filtradas(ctx, factura, tmp_path, monkeypatch, msgs):
+    target = tmp_path / "export.csv"
+    monkeypatch.setattr(files, "ask_save_csv", lambda _p, _n: str(target))
+    page = InvoicesPage(ctx)
+    page.status.set_value("PENDIENTE")
+    page.export_csv()
+    text = target.read_text(encoding="utf-8-sig")
+    assert text.splitlines()[1].startswith("ACME SA,F-0001,")
+    assert "1 facturas" in msgs.infos[-1]
+    page.status.set_value("VENCIDA")
+    page.export_csv()
+    assert len(target.read_text(encoding="utf-8-sig").splitlines()) == 1  # solo cabecera

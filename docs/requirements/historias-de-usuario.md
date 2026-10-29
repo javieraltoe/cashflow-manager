@@ -7,16 +7,16 @@ producto el 2026-10-29). La especificación completa todavía no está versionad
 
 | HU | Prioridad | Historia | Sprint | Estado |
 |---|---|---|---|---|
-| HU01 | — | Login y roles | 1 | Hecha |
-| HU02 | — | Clientes | 1 | Hecha |
-| HU03 | — | Facturas con saldo | 1 | Hecha |
+| HU01 | P0 | Login y roles | 1 | Hecha |
+| HU02 | P0 | Clientes | 1 | Hecha |
+| HU03 | P0 | Facturas con saldo | 1 | Hecha |
 | HU04 | P0 | Pago parcial con saldo exacto, sin pagar más de lo adeudado, con control de concurrencia | 2 | Hecha |
-| HU05 | — | Una factura impaga pasa a vencida sola | 1 | Hecha |
+| HU05 | P0 | Una factura impaga pasa a vencida sola | 1 | Hecha |
 | HU06 | P0 | El dashboard coincide con las sumas en SQL | 4 | Hecha (`test_metrics_hu06.py`, `docs/runbook/dataset-demo.md`) |
-| HU07 | — | Importación de CSV | 5 | Pendiente |
-| HU08 | — | Filtros y exportación a CSV | 5 | Pendiente |
+| HU07 | P1 | Importación de CSV | 5 | Hecha (`test_imports_api.py`) |
+| HU08 | P1 | Filtros y exportación a CSV | 5 | Hecha (`test_exports_api.py`) |
 | HU09 | P1 | Anular un pago con motivo; el saldo vuelve a subir y queda auditado | 2 | Hecha |
-| HU10 | — | Instalador y despliegue con HTTPS | 5 | Pendiente |
+| HU10 | P1 | Instalador y despliegue con HTTPS | 5 | Lista para desplegar (`docs/runbook/despliegue-aws.md`) |
 
 ## HU04 (P0, imprescindible)
 

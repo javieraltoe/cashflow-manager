@@ -27,7 +27,18 @@ def icon_path() -> Path:
     return Path(__file__).resolve().parents[1] / "packaging" / "cashflow.ico"
 
 
+def use_system_certificates() -> None:
+    """HTTPS valida contra los certificados de Windows (no solo los de certifi)."""
+    try:
+        import truststore
+
+        truststore.inject_into_ssl()
+    except ImportError:  # pragma: no cover - sin truststore se usa certifi
+        pass
+
+
 def main() -> int:
+    use_system_certificates()
     app = QApplication(sys.argv)
     app.setApplicationName("CashFlow Manager")
     app.setApplicationVersion(__version__)

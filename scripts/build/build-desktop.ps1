@@ -11,8 +11,9 @@
 .EXAMPLE
   .\scripts\build\build-desktop.ps1
   .\scripts\build\build-desktop.ps1 -SkipTests
+  .\scripts\build\build-desktop.ps1 -Sign      # firma exe e instalador (ver sign-desktop.ps1)
 #>
-param([switch]$SkipTests)
+param([switch]$SkipTests, [switch]$Sign)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -39,7 +40,7 @@ if (-not $SkipTests) {
 
 # Metadatos del .exe con la version actual
 $versionFile = "desktop\packaging\version_info.txt"
-$content = Get-Content $versionFile -Raw
+$content = Get-Content $versionFile -Raw -Encoding UTF8
 $content = $content -replace 'filevers=\([^)]*\)', "filevers=$VerTuple"
 $content = $content -replace 'prodvers=\([^)]*\)', "prodvers=$VerTuple"
 $content = $content -replace "StringStruct\('FileVersion', '[^']*'\)", "StringStruct('FileVersion', '$Version')"
@@ -54,6 +55,7 @@ if ($LASTEXITCODE -ne 0) { throw "PyInstaller fallo." }
 $exe = "dist\CashFlowManager\CashFlowManager.exe"
 if (-not (Test-Path $exe)) { throw "No se genero $exe" }
 Write-Ok "Ejecutable: $exe"
+if ($Sign) { & (Join-Path $PSScriptRoot "sign-desktop.ps1") $exe }
 
 Write-Step "Comprimiendo carpeta portable"
 $zip = "dist\CashFlowManager-$Version-win64.zip"
@@ -79,7 +81,9 @@ if ($iscc) {
     Write-Step "Instalador (Inno Setup)"
     & $iscc "/DAppVersion=$Version" "desktop\packaging\cashflow.iss"
     if ($LASTEXITCODE -ne 0) { throw "Inno Setup fallo." }
-    Write-Ok "Instalador: dist\CashFlowManager-Setup-$Version.exe"
+    $setup = "dist\CashFlowManager-Setup-$Version.exe"
+    if ($Sign) { & (Join-Path $PSScriptRoot "sign-desktop.ps1") $setup }
+    Write-Ok "Instalador: $setup"
 } else {
     Write-Host "Inno Setup no esta instalado: se omite el instalador." -ForegroundColor Yellow
     Write-Host "  Instalalo con: winget install JRSoftware.InnoSetup  y volve a ejecutar este script."
