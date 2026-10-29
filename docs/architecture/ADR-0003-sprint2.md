@@ -1,6 +1,6 @@
 # ADR-0003 · Decisiones del Sprint 2 (pagos y saldo a favor)
 
-Fecha: 2026-10-29 · Estado: propuesta (pendiente de aprobación)
+Fecha: 2026-10-29 · Estado: aceptada
 
 Alcance: **HU04 (P0)** — pagos parciales o totales con saldo exacto, sin pagar más de lo
 adeudado y con control de concurrencia — y **HU09 (P1)** — anulación de un pago con motivo,
