@@ -1,0 +1,11 @@
+[server]
+headless = true
+port = 8501
+# Polling: necesario para recarga en caliente con bind mounts de Docker en Windows.
+fileWatcherType = "poll"
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"

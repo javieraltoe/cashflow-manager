@@ -1,0 +1,7 @@
+# Normaliza finales de línea: evita romper scripts dentro de contenedores Linux.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.png binary
+*.ico binary
+*.docx binary

@@ -1,0 +1,73 @@
+# CashFlow Manager - entorno de DESARROLLO local.
+# Levanta: db (PostgreSQL 16), api (FastAPI) y dashboard (Streamlit).
+# La app de escritorio corre fuera de Docker y se conecta a la API.
+#
+# Uso:  docker compose up -d --build
+#       docker compose logs -f api
+
+name: cashflow
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Definir POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Definir POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Solo accesible desde tu propia PC (DBeaver/psql). Nunca 0.0.0.0.
+    # Puerto 5433 en el host para no chocar con un PostgreSQL instalado en Windows.
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Dentro de la red de Docker el host de la base es "db" y el puerto, 5432.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      # Recarga en caliente confiable sobre bind mounts en Windows.
+      WATCHFILES_FORCE_POLLING: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+    volumes:
+      - ./backend/app:/srv/app/app
+      - ./backend/alembic:/srv/app/alembic
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # El dashboard SOLO habla con la API, nunca con la base.
+      API_BASE_URL: http://api:8000/api/v1
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${DASHBOARD_HOST_PORT:-8501}:8501"
+    volumes:
+      - ./dashboard:/srv/dashboard
+
+volumes:
+  pgdata:

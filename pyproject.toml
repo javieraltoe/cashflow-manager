@@ -1,0 +1,36 @@
+# Configuración de herramientas del monorepo (no es un paquete instalable).
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["backend", "."]
+extend-exclude = ["backend/alembic/versions"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # orden de imports
+  "B",        # bugbear
+  "UP",       # sintaxis moderna
+  "S",        # seguridad (bandit)
+  "SIM",      # simplificaciones
+]
+ignore = [
+  "B008",     # Depends() en defaults es el patrón de FastAPI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/tests/**" = ["S101", "S105", "S106"]  # assert y contraseñas de prueba
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "desktop"]
+known-third-party = ["alembic"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = "-ra"
+markers = [
+  "integration: requiere PostgreSQL en ejecución",
+]

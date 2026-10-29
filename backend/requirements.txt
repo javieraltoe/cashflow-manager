@@ -1,0 +1,9 @@
+# Dependencias de RUNTIME del backend (las que van a la imagen Docker).
+# Versiones fijadas para builds reproducibles. Actualizar de forma controlada.
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.4
+pydantic-settings==2.9.1
+SQLAlchemy==2.0.40
+alembic==1.15.2
+psycopg[binary]==3.2.6

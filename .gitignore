@@ -1,0 +1,29 @@
+# Secretos
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Builds de escritorio (PyInstaller)
+build/
+dist/
+*.spec.bak
+
+# Backups y datos locales
+scripts/backup/*.dump
+scripts/backup/*.sql
+*.csv.tmp
+
+# Editor / SO
+.idea/
+Thumbs.db
+.DS_Store

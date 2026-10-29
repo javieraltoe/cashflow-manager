@@ -1,0 +1,5 @@
+# Dependencias de DESARROLLO / CI del backend (no van a la imagen).
+-r requirements.txt
+pytest==8.3.5
+httpx==0.28.1
+ruff==0.11.8
