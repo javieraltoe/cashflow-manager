@@ -1,4 +1,7 @@
 # Aplicación de escritorio Windows (corre fuera de Docker).
 PySide6==6.9.0
 httpx==0.28.1
+# Base de zonas horarias: Windows no trae una (fechas de Buenos Aires).
+tzdata==2025.2
+# Empaquetado del .exe
 pyinstaller==6.13.0

@@ -14,7 +14,7 @@ param(
     [Parameter(Position = 0)]
     [ValidateSet("help", "setup", "up", "down", "reset-db", "logs", "ps", "db",
                  "migrate", "api", "dashboard", "desktop", "test", "lint",
-                 "format", "check", "create-admin", "revision")]
+                 "format", "check", "create-admin", "revision", "build-desktop")]
     [string]$Task = "help",
 
     [Parameter(Position = 1)]
@@ -56,7 +56,7 @@ switch ($Task) {
         Get-Help $PSCommandPath -Detailed | Out-Host
         Write-Host "Comandos: setup, up, down, reset-db, logs [servicio], ps, db, migrate,"
         Write-Host "          api, dashboard, desktop, test, lint, format, check,"
-        Write-Host "          create-admin <email> <nombre>, revision <mensaje>"
+        Write-Host "          create-admin <email> <nombre>, revision <mensaje>, build-desktop"
     }
 
     "setup" {
@@ -148,6 +148,12 @@ switch ($Task) {
     "dashboard" {
         Assert-Venv
         & $Py -m streamlit run dashboard\app.py
+    }
+
+    "build-desktop" {
+        # Genera dist\CashFlowManager\CashFlowManager.exe (+ zip e instalador si hay Inno Setup)
+        & (Join-Path $PSScriptRoot "build\build-desktop.ps1")
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 
     "desktop" {

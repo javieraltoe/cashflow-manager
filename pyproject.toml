@@ -22,14 +22,15 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "backend/tests/**" = ["S101", "S105", "S106"]  # assert y contraseñas de prueba
+"desktop/tests/**" = ["S101", "S105", "S106", "F811"]  # F811: fixtures del backend reexportadas
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "desktop"]
 known-third-party = ["alembic"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
-pythonpath = ["backend"]
+testpaths = ["backend/tests", "desktop/tests"]
+pythonpath = ["backend", "."]
 addopts = "-ra"
 markers = [
   "integration: requiere PostgreSQL en ejecución",

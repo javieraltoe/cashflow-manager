@@ -16,8 +16,8 @@ venv/
 htmlcov/
 
 # Builds de escritorio (PyInstaller)
-build/
-dist/
+/build/
+/dist/
 *.spec.bak
 
 # Backups y datos locales

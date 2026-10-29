@@ -10,8 +10,8 @@ cobranzas, con un dashboard web privado de indicadores.
 | Dashboard web | Streamlit · Plotly (solo consume la API) | Docker (`dashboard`) |
 | Escritorio | PySide6 · httpx · PyInstaller | Windows, proceso local |
 
-Estado: **Sprint 2 — pagos y saldo a favor** (sobre auth, clientes y facturas del Sprint 1). Decisiones en
-`docs/architecture/ADR-0001-sprint0.md`, `ADR-0002-sprint1.md` y `ADR-0003-sprint2.md`.
+Estado: **Sprint 3 — aplicación de escritorio** (sobre la API de los Sprints 1 y 2). Decisiones en
+`docs/architecture/ADR-0001-sprint0.md` a `ADR-0004-sprint3.md`.
 
 ---
 
@@ -87,8 +87,15 @@ Después, en <http://localhost:8000/docs> → `POST /auth/login` → copiar `acc
 ### App de escritorio
 
 ```powershell
-.\scripts\dev.ps1 desktop   # ventana que prueba la conexión con la API
+.\scripts\dev.ps1 desktop          # abre la app (login → Inicio, Clientes, Facturas, Pagos,
+                                    # Saldo a favor, Configuración)
+.\scripts\dev.ps1 build-desktop    # genera dist\CashFlowManager\CashFlowManager.exe,
+                                    # el zip portable y, con Inno Setup, el instalador
 ```
+
+La primera vez, en el login, el servidor es `localhost:8000`. La dirección queda guardada en
+`%APPDATA%\CashFlowManager\config.json` (nunca se guardan contraseñas ni tokens).
+Guía de prueba completa: `docs/runbook/sprint3-verificacion.md`.
 
 ## 4. Calidad
 
@@ -103,8 +110,8 @@ Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
 
 | Escenario | Resultado esperado |
 |---|---|
-| Sin Docker | `47 passed, 120 skipped` |
-| Con `.\scripts\dev.ps1 up` o `db` | `167 passed` |
+| Sin Docker | `96 passed, 163 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `259 passed` (backend + escritorio, incluida la interfaz) |
 
 Para crear una migración nueva después de cambiar un modelo:
 `.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).
@@ -149,9 +156,10 @@ con `SELECT … FOR UPDATE`, así dos cobros simultáneos nunca superan el impor
 cashflow-manager/
   backend/            API FastAPI (app/{api,core,db,models,schemas,services}), alembic/, tests/
   dashboard/          Streamlit (app.py, pages/, components/)
-  desktop/            PySide6 (app/{views,widgets,services})
+  desktop/            PySide6: app/core (sin Qt), app/services (cliente API), app/views,
+                      app/widgets, packaging/ (PyInstaller + Inno Setup), tests/
   infra/              docker/, nginx/, aws/        (despliegue: Sprint 5)
-  scripts/            dev.ps1, seed/, backup/, build/
+  scripts/            dev.ps1, build/build-desktop.ps1, seed/, backup/
   docs/               requirements/, architecture/, api/, runbook/
   docker-compose.yml  .env.example  pyproject.toml  .github/workflows/ci.yml
 ```
