@@ -144,7 +144,9 @@ def test_todas_las_paginas_cargan_sin_errores(ctx, factura, msgs):
     for row in range(len(win.pages)):
         win.nav.setCurrentRow(row)
     assert msgs.errors == []
-    assert win.home.due_soon.value.text() == "1"
+    assert win.home.due_soon.value.text() == "$ 1.000,00"
+    assert win.home.due_soon.detail.text() == "1 factura"
+    assert win.home.receivable.value.text() == "$ 1.000,00"
     assert win.invoices.table.table_model.rowCount() == 1
     assert win.invoices.void_btn.isVisibleTo(win.invoices)  # admin ve "Anular"
 

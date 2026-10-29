@@ -4,7 +4,7 @@ from PySide6.QtCore import QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from desktop.app.core.formatting import format_date, format_money, status_label, today_local
+from desktop.app.core.formatting import format_date, format_money, status_label
 from desktop.app.core.summary import load_home_summary
 from desktop.app.views.base import AppContext, BasePage
 from desktop.app.widgets import messages
@@ -16,15 +16,23 @@ class StatCard(QFrame):
         super().__init__(parent)
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.value = QLabel("—")
-        self.value.setStyleSheet("font-size: 26px; font-weight: 600;")
+        self.value.setStyleSheet("font-size: 24px; font-weight: 600;")
         caption = QLabel(title)
         caption.setStyleSheet("color: #57606a;")
+        self.detail = QLabel()
+        self.detail.setStyleSheet("color: #57606a;")
         lay = QVBoxLayout(self)
-        lay.addWidget(self.value)
         lay.addWidget(caption)
+        lay.addWidget(self.value)
+        lay.addWidget(self.detail)
 
-    def set_value(self, value: int) -> None:
-        self.value.setText(f"{value:,}".replace(",", "."))
+    def set_value(self, value: str, detail: str = "") -> None:
+        self.value.setText(value)
+        self.detail.setText(detail)
+
+
+def invoices_label(count: int) -> str:
+    return "1 factura" if count == 1 else f"{count:,} facturas".replace(",", ".")
 
 
 class HomePage(BasePage):
@@ -35,10 +43,10 @@ class HomePage(BasePage):
     def __init__(self, ctx: AppContext, parent: QWidget | None = None) -> None:
         super().__init__(ctx, parent)
         cards = QGridLayout()
-        self.overdue = StatCard("Facturas vencidas")
-        self.due_soon = StatCard("Vencen en los próximos 7 días")
-        self.clients = StatCard("Clientes activos")
-        for i, card in enumerate((self.overdue, self.due_soon, self.clients)):
+        self.receivable = StatCard("Saldo total por cobrar")
+        self.overdue = StatCard("Saldo vencido")
+        self.due_soon = StatCard("Vence en los próximos 7 días")
+        for i, card in enumerate((self.receivable, self.overdue, self.due_soon)):
             cards.addWidget(card, 0, i)
         self.layout_.addLayout(cards)
 
@@ -66,12 +74,16 @@ class HomePage(BasePage):
         bar.addWidget(dashboard)
 
     def refresh(self) -> None:
-        summary = self.ctx.call(self, load_home_summary, self.ctx.api, today_local())
+        summary = self.ctx.call(self, load_home_summary, self.ctx.api)
         if summary is None:
             return
-        self.overdue.set_value(summary.overdue_count)
-        self.due_soon.set_value(summary.due_soon_count)
-        self.clients.set_value(summary.active_clients)
+        self.receivable.set_value(format_money(summary.total_receivable), "a hoy")
+        self.overdue.set_value(
+            format_money(summary.overdue_balance), invoices_label(summary.overdue_count)
+        )
+        self.due_soon.set_value(
+            format_money(summary.due_soon_balance), invoices_label(summary.due_soon_count)
+        )
         self.table.set_rows(summary.upcoming)
 
     def open_dashboard(self) -> None:

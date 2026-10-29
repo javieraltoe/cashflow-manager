@@ -2,3 +2,5 @@
 streamlit==1.45.0
 plotly==6.0.1
 httpx==0.28.1
+# Base de zonas horarias para la fecha de Buenos Aires (la imagen slim no la trae).
+tzdata==2025.2

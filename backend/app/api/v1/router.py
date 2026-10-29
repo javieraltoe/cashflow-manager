@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import auth, clients, credits, health, invoices, me, payments, users
+from app.api.v1 import auth, clients, credits, health, invoices, me, metrics, payments, users
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -13,3 +13,4 @@ api_router.include_router(clients.router)
 api_router.include_router(invoices.router)
 api_router.include_router(payments.router)
 api_router.include_router(credits.router)
+api_router.include_router(metrics.router)

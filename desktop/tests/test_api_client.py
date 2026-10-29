@@ -258,8 +258,10 @@ def test_resumen_de_inicio(admin_api):
                 "amount": D("10"),
             }
         )
-    resumen = load_home_summary(admin_api, HOY)
+    resumen = load_home_summary(admin_api)
     assert resumen.overdue_count == 1
+    assert resumen.overdue_balance == D("1000.00")
     assert resumen.due_soon_count == 2  # S-1 y S-2 vencen en los próximos 7 días
+    assert resumen.due_soon_balance == D("20.00")
+    assert resumen.total_receivable == D("1030.00")
     assert [i["invoice_number"] for i in resumen.upcoming] == ["S-1", "S-2"]
-    assert resumen.active_clients == 1

@@ -1,46 +1,33 @@
-"""Resumen de la pantalla Inicio, armado con los endpoints existentes.
-
-Los KPIs monetarios (saldo total, vencido, cobrado) llegan con /metrics en el Sprint 4;
-acá solo se muestran conteos y los próximos vencimientos.
-"""
+"""Resumen de la pantalla Inicio a partir de /metrics (los mismos números del dashboard)."""
 
 from dataclasses import dataclass, field
-from datetime import date
+from decimal import Decimal
 
-from desktop.app.core.formatting import week_ahead
+from desktop.app.core.formatting import to_decimal
 from desktop.app.services.api import ApiClient
 
-UPCOMING_LIMIT = 50
+DUE_SOON_DAYS = 7
 
 
 @dataclass
 class HomeSummary:
+    total_receivable: Decimal = Decimal("0.00")
+    overdue_balance: Decimal = Decimal("0.00")
     overdue_count: int = 0
+    due_soon_balance: Decimal = Decimal("0.00")
     due_soon_count: int = 0
-    active_clients: int = 0
     upcoming: list[dict] = field(default_factory=list)
 
 
-def load_home_summary(api: ApiClient, today: date) -> HomeSummary:
-    overdue = api.list_invoices(status="VENCIDA", page_size=1)["total"]
-    upcoming: list[dict] = []
-    due_soon = 0
-    # Facturas no vencidas con saldo que vencen entre hoy y hoy+7 (§6 "Próximos 7 días").
-    for status in ("PENDIENTE", "PARCIAL"):
-        page = api.list_invoices(
-            status=status,
-            due_from=today,
-            due_to=week_ahead(today),
-            sort="due_date",
-            page_size=UPCOMING_LIMIT,
-        )
-        due_soon += page["total"]
-        upcoming.extend(page["items"])
-    upcoming.sort(key=lambda inv: (inv["due_date"], inv["invoice_number"]))
-    clients = api.list_clients(is_active=True, page_size=1)["total"]
+def load_home_summary(api: ApiClient) -> HomeSummary:
+    """KPIs "a hoy" (spec §6) y próximos vencimientos. "Hoy" lo define el servidor."""
+    o = api.metrics_overview()
+    u = api.metrics_upcoming(days=DUE_SOON_DAYS)
     return HomeSummary(
-        overdue_count=overdue,
-        due_soon_count=due_soon,
-        active_clients=clients,
-        upcoming=upcoming[:UPCOMING_LIMIT],
+        total_receivable=to_decimal(o["total_receivable"]),
+        overdue_balance=to_decimal(o["overdue_balance"]),
+        overdue_count=o["overdue_count"],
+        due_soon_balance=to_decimal(o["due_soon_balance"]),
+        due_soon_count=o["due_soon_count"],
+        upcoming=u["items"],
     )

@@ -283,6 +283,13 @@ class ApiClient:
     def void_payment(self, payment_id: str, reason: str) -> dict:
         return self._send("POST", f"/payments/{payment_id}/void", json={"reason": reason})
 
+    # Indicadores (los mismos que usa el dashboard web)
+    def metrics_overview(self, **params: Any) -> dict:
+        return self._send("GET", "/metrics/overview", params=params)
+
+    def metrics_upcoming(self, **params: Any) -> dict:
+        return self._send("GET", "/metrics/upcoming", params=params)
+
     # Saldo a favor
     def client_credit(self, client_id: str) -> dict:
         return self._send("GET", f"/clients/{client_id}/credit")

@@ -14,7 +14,8 @@ param(
     [Parameter(Position = 0)]
     [ValidateSet("help", "setup", "up", "down", "reset-db", "logs", "ps", "db",
                  "migrate", "api", "dashboard", "desktop", "test", "lint",
-                 "format", "check", "create-admin", "revision", "build-desktop")]
+                 "format", "check", "create-admin", "revision", "build-desktop",
+                 "seed-demo", "seed-perf", "bench")]
     [string]$Task = "help",
 
     [Parameter(Position = 1)]
@@ -56,7 +57,8 @@ switch ($Task) {
         Get-Help $PSCommandPath -Detailed | Out-Host
         Write-Host "Comandos: setup, up, down, reset-db, logs [servicio], ps, db, migrate,"
         Write-Host "          api, dashboard, desktop, test, lint, format, check,"
-        Write-Host "          create-admin <email> <nombre>, revision <mensaje>, build-desktop"
+        Write-Host "          create-admin <email> <nombre>, revision <mensaje>, build-desktop,"
+        Write-Host "          seed-demo [reset], seed-perf [reset], bench <email>"
     }
 
     "setup" {
@@ -136,6 +138,31 @@ switch ($Task) {
         if (-not $Arg) { throw 'Uso: .\scripts\dev.ps1 revision "descripcion del cambio"' }
         Push-Location backend
         try { Invoke-Native $Py @("-m", "alembic", "revision", "--autogenerate", "-m", $Arg) } finally { Pop-Location }
+    }
+
+    "seed-demo" {
+        # Dataset de demostracion reconciliado (docs/runbook/dataset-demo.md)
+        Assert-Venv
+        $seedArgs = @("-m", "app.cli", "seed-demo")
+        if ($Arg -eq "reset") { $seedArgs += "--reset" }
+        Push-Location backend
+        try { Invoke-Native $Py $seedArgs } finally { Pop-Location }
+    }
+
+    "seed-perf" {
+        # 1.000 clientes, 20.000 facturas y 50.000 pagos (prueba de rendimiento)
+        Assert-Venv
+        $seedArgs = @("-m", "app.cli", "seed-perf")
+        if ($Arg -eq "reset") { $seedArgs += "--reset" }
+        Push-Location backend
+        try { Invoke-Native $Py $seedArgs } finally { Pop-Location }
+    }
+
+    "bench" {
+        # Mide tiempos de la API levantada (objetivo < 3 s). Uso: bench <email>
+        Assert-Venv
+        if (-not $Arg) { throw 'Uso: .\scripts\dev.ps1 bench <email-admin>' }
+        Invoke-Native $Py @("scripts\seed\bench_metrics.py", "--email", $Arg)
     }
 
     "api" {

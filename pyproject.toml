@@ -21,15 +21,15 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"backend/tests/**" = ["S101", "S105", "S106"]  # assert y contraseñas de prueba
-"desktop/tests/**" = ["S101", "S105", "S106", "F811"]  # F811: fixtures del backend reexportadas
+"backend/tests/**" = ["S101", "S105", "S106", "S608"]  # assert y contraseñas de prueba
+"{desktop,dashboard}/tests/**" = ["S101", "S105", "S106", "F811"]  # F811: fixtures del backend reexportadas
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "desktop"]
+known-first-party = ["app", "desktop", "dashboard", "components"]
 known-third-party = ["alembic"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "desktop/tests"]
+testpaths = ["backend/tests", "desktop/tests", "dashboard/tests"]
 pythonpath = ["backend", "."]
 addopts = "-ra"
 markers = [

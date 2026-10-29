@@ -12,7 +12,7 @@ producto el 2026-10-29). La especificación completa todavía no está versionad
 | HU03 | — | Facturas con saldo | 1 | Hecha |
 | HU04 | P0 | Pago parcial con saldo exacto, sin pagar más de lo adeudado, con control de concurrencia | 2 | Hecha |
 | HU05 | — | Una factura impaga pasa a vencida sola | 1 | Hecha |
-| HU06 | — | El dashboard coincide con las sumas en SQL | 4 | Pendiente |
+| HU06 | P0 | El dashboard coincide con las sumas en SQL | 4 | Hecha (`test_metrics_hu06.py`, `docs/runbook/dataset-demo.md`) |
 | HU07 | — | Importación de CSV | 5 | Pendiente |
 | HU08 | — | Filtros y exportación a CSV | 5 | Pendiente |
 | HU09 | P1 | Anular un pago con motivo; el saldo vuelve a subir y queda auditado | 2 | Hecha |

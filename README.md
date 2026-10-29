@@ -10,8 +10,8 @@ cobranzas, con un dashboard web privado de indicadores.
 | Dashboard web | Streamlit · Plotly (solo consume la API) | Docker (`dashboard`) |
 | Escritorio | PySide6 · httpx · PyInstaller | Windows, proceso local |
 
-Estado: **Sprint 3 — aplicación de escritorio** (sobre la API de los Sprints 1 y 2). Decisiones en
-`docs/architecture/ADR-0001-sprint0.md` a `ADR-0004-sprint3.md`.
+Estado: **Sprint 4 — indicadores y dashboard** (sobre la API, el escritorio y los Sprints 1 a 3).
+Decisiones en `docs/architecture/ADR-0001-sprint0.md` a `ADR-0005-sprint4.md`.
 
 ---
 
@@ -97,6 +97,23 @@ La primera vez, en el login, el servidor es `localhost:8000`. La dirección qued
 `%APPDATA%\CashFlowManager\config.json` (nunca se guardan contraseñas ni tokens).
 Guía de prueba completa: `docs/runbook/sprint3-verificacion.md`.
 
+### Dashboard web e indicadores
+
+<http://localhost:8501> → ingresar con el mismo usuario de la app. KPIs "a hoy" (por cobrar,
+vencido, % vencido, próximos 7 días, saldo a favor) y "del período" (cobrado), cobranza
+mensual, vencido por antigüedad, principales deudores y próximos vencimientos, con filtros
+por período y cliente y exportación CSV de cada vista.
+
+```powershell
+.\scripts\dev.ps1 seed-demo          # datos de demostración con valores documentados (HU06)
+.\scripts\dev.ps1 seed-demo reset    # idem, borrando antes clientes/facturas/pagos
+.\scripts\dev.ps1 seed-perf reset    # 1.000 clientes, 20.000 facturas, 50.000 pagos
+.\scripts\dev.ps1 bench <email>      # mide tiempos (objetivo < 3 s)
+```
+
+Valores esperados del dataset: `docs/runbook/dataset-demo.md` · rendimiento medido:
+`docs/runbook/rendimiento.md` · guía de prueba: `docs/runbook/sprint4-verificacion.md`.
+
 ## 4. Calidad
 
 ```powershell
@@ -110,8 +127,8 @@ Cada test se revierte al terminar: tus datos de desarrollo no se tocan.
 
 | Escenario | Resultado esperado |
 |---|---|
-| Sin Docker | `96 passed, 163 skipped` |
-| Con `.\scripts\dev.ps1 up` o `db` | `259 passed` (backend + escritorio, incluida la interfaz) |
+| Sin Docker | `113 passed, 193 skipped` |
+| Con `.\scripts\dev.ps1 up` o `db` | `305 passed` (backend, escritorio y dashboard, incluidas las interfaces) |
 
 Para crear una migración nueva después de cambiar un modelo:
 `.\scripts\dev.ps1 revision "descripcion"` (revisá siempre el archivo generado).
@@ -129,7 +146,7 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | Borrar datos locales | `.\scripts\dev.ps1 reset-db` |
 | Consola SQL | `docker compose exec db psql -U cashflow -d cashflow` |
 
-## 6. API v1 (Sprint 2)
+## 6. API v1
 
 | Endpoint | Quién | Descripción |
 |---|---|---|
@@ -143,6 +160,9 @@ PostgreSQL 16 real, y construye las imágenes Docker.
 | `GET /clients/{id}/credit` · `GET/POST /credits` · `GET /credits/{id}` | autenticado | Saldo a favor del cliente y cobros a cuenta (sin factura) |
 | `POST /credits/apply` | autenticado | Imputar saldo a favor a una factura del cliente |
 | `POST /credits/{id}/void` | admin | Anular un cobro a cuenta (bloqueado si ya se imputó) |
+| `GET /metrics/overview` | autenticado | KPIs a hoy + cobrado del período (`date_from`, `date_to`, `client_id`) |
+| `GET /metrics/collections-monthly` | autenticado | Cobrado por mes, todos los meses del período |
+| `GET /metrics/aging` · `/metrics/top-debtors` · `/metrics/upcoming` | autenticado | Vencido por antigüedad, principales deudores (`limit`) y próximos vencimientos (`days`) |
 
 Las facturas devuelven `paid_amount`, `balance`, `status` (PENDIENTE · PARCIAL · VENCIDA ·
 PAGADA · ANULADA) y `days_overdue`, calculados con la fecha de hoy en Buenos Aires.
@@ -155,7 +175,7 @@ con `SELECT … FOR UPDATE`, así dos cobros simultáneos nunca superan el impor
 ```
 cashflow-manager/
   backend/            API FastAPI (app/{api,core,db,models,schemas,services}), alembic/, tests/
-  dashboard/          Streamlit (app.py, pages/, components/)
+  dashboard/          Streamlit: app.py, components/ (api, data, charts, fmt), tests/
   desktop/            PySide6: app/core (sin Qt), app/services (cliente API), app/views,
                       app/widgets, packaging/ (PyInstaller + Inno Setup), tests/
   infra/              docker/, nginx/, aws/        (despliegue: Sprint 5)
